@@ -14,6 +14,15 @@
 # limitations under the License.
 #
 
+mydependson = {
+    "horizon::server" => [
+        ['glance','api','bind_port'],
+        ['horizon']
+    ]
+}
+
+BarclampLibrary::Barclamp::DependsOn.add(mydependson)
+
 if CrowbarRoleRecipe.node_state_valid_for_role?(node, "horizon", "horizon-server")
-  include_recipe "horizon::server"
+  include_recipe_smartly "horizon::server"
 end
