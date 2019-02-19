@@ -29,7 +29,7 @@ module DesignateHelper
         ip: @ip,
 
         api: {
-          bind_host: if ! ha_enabled && node[:designate][:api][:bind_open_address]
+          bind_host: if !ha_enabled && node[:designate][:api][:bind_open_address]
                        "0.0.0.0"
                      else
                        @ip
