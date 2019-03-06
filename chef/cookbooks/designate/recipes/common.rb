@@ -13,6 +13,8 @@
 # limitations under the License.
 #
 
+require "yaml"
+
 package "openstack-designate"
 
 network_settings = DesignateHelper.network_settings(node)
@@ -55,4 +57,44 @@ template node[:designate][:config_file] do
     keystone_settings: KeystoneHelper.keystone_settings(node, :designate),
     memcached_servers: memcached_servers
   )
+end
+
+dnsserv = node_search_with_cache("roles:dns-server").first
+dnsmaster = dnsserv[:dns][:master_ip]
+dnsslaves = dnsserv[:dns][:slave_ips]
+mdnsaddr = Barclamp::Inventory.get_network_by_type(node, "admin").address
+
+pools = [{
+      "name"=>"default-bind",
+      "description"=>"Default BIND9 Pool",
+      "id" => "794ccc2c-d751-44fe-b57f-8894c9f5c842",
+      "attributes"=>{},
+      "ns_records"=> [{"hostname" => "#{dnsserv[:fqdn]}.", "priority" => 1}],
+      "nameservers"=> [{"host"=>"127.0.0.1", "port"=>53}],
+      "also_notifies"=> dnsslaves.map do |ip| {"host" => ip , "port" => 53 } end,
+      "targets"=> [{
+        "type"=>"bind9",
+        "description"=>"BIND9 Server 1",
+        "masters"=>[{ "host" => mdnsaddr, "port" => 5354 }],
+        "options"=> {
+          "host"=>"127.0.0.1",
+          "port"=>53,
+          "rndc_host"=>dnsmaster,
+          "rndc_port"=>953,
+          "rndc_key_file"=>"/etc/designate/rndc.key"}},
+]}]
+
+file "/etc/designate/pools.crowbar.yaml" do
+  owner "root"
+  group node[:designate][:group]
+  mode "0640"
+  content pools.to_yaml
+end
+
+template "/etc/designate/rndc.key" do
+  source "rndc.key.erb"
+  owner "root"
+  group node[:designate][:group]
+  mode "0640"
+  variables(rndc_key: dnsserv[:dns][:designate_rndc_key])
 end
