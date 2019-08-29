@@ -37,7 +37,7 @@ kafka_host: <%= @monasca_net_ip %>
 kafka_hosts: "<%= @monasca_net_ip %>:9092"
 kafka_log_retention_hours: <%= @kafka_settings['log_retention_hours'] %>
 kafka_log_retention_bytes: <%= @kafka_settings['log_retention_bytes'] %>
-kibana_host: <%= @pub_net_ip %>
+kibana_host: 0.0.0.0
 kibana_plugins:
   monasca-kibana-plugin:
     url: "file:///usr/share/monasca-kibana-plugin/monasca-kibana-plugin.tar.gz"
